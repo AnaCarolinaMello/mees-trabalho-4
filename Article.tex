@@ -1,0 +1,394 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% How to use writeLaTeX: 
+%
+% You edit the source code here on the left, and the preview on the
+% right shows you the result within a few seconds.
+%
+% Bookmark this page and share the URL with your co-authors. They can
+% edit at the same time!
+%
+% You can upload figures, bibliographies, custom classes and
+% styles using the files menu.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+
+\usepackage{graphicx,url}
+
+%\usepackage[brazil]{babel}   
+\usepackage[utf8]{inputenc}  
+
+     
+\sloppy
+
+\title{Análise de Código para Detecção de Vulnerabilidades:\\
+Comparação entre Abordagens Baseadas em Aprendizado de Máquina e em Algoritmos Determinísticos}
+
+\author{Ana Carolina Caldas de Mello \\ Gustavo Menezes Barbosa \\ João Pedro Queiroz Rocha \\ Maria Eduarda Gonçalves de Souza Ferreira \\ Pedro Henrique Dias Camara \\ Wanessa Dias Costa}
+
+
+\address{Pontifícia Universidade Católica de Minas Gerais\\
+Engenharia de Software\\
+Campus Lourdes
+  \email{ana.caldas@sga.pucminas.br, gustavo.barbosa.1386677@sga.pucminas.br}
+  \email{joao.rocha.1439661@sga.pucminas.br, 1380383@sga.pucminas.br}
+\email{pcamara@sga.pucminas.br, wanessa.costa@sga.pucminas.br}
+}
+
+\begin{document} 
+
+\maketitle
+
+\begin{abstract}
+  This work investigates the effectiveness of code analysis approaches based on machine learning (ML) and deterministic algorithms in detecting vulnerabilities in open-source projects. Four tools are compared: two deterministic (Codeql and Snyk) and two ML-based (AutoVAS and VulCNN), using the Software Assurance Reference Dataset (SARD) from the National Institute of Standards and Technology (NIST). Accuracy, coverage by Common Weakness Enumeration (CWE) categories, and efficiency (time, Central Processing Unit — CPU, and memory) are evaluated, presenting limitations and directions for future work.
+\end{abstract}
+     
+\begin{resumo} 
+  Neste trabalho, é investigada a eficácia de abordagens de análise de código baseadas em \textit{machine learning} (ML) e em algoritmos determinísticos na detecção de vulnerabilidades em projetos \textit{open-source}. São comparados quatro ferramentas: duas determinísticas (Codeql e Snyk) e duas de ML (AutoVAS e VulCNN), utilizando a base \textit{Software Assurance Reference Dataset} (SARD) do \textit{National Institute of Standards and Technology} (NIST). Os critérios de avaliação são: precisão, cobertura por categorias \textit{Common Weakness Enumeration} (CWE), e eficiência (tempo, \textit{Central Processing Unit} — CPU e memória), a fim de apresentar limitações e direções para trabalhos futuros.
+\end{resumo}
+
+
+\section{Introdução}
+
+Vulnerabilidades de software podem ser entendidas como falhas no projeto, na implementação, na operação ou na gestão que permitem a violação da política de segurança do mesmo \cite{shirey2007}. Esses defeitos variam desde problemas simples, como o uso de variáveis não inicializadas, até erros críticos, como injeção de código e estouro de inteiros \cite{arusoaie2017}. Essas falhas no sistema, se não identificadas e tratadas corretamente, conseguem causar perdas inestimáveis, e a literatura tem como registro a missão \textit{Mars Polar Lander} (MPL) e \textit{Deep Space 2} (DS2), consequentes de um erro de software \cite{albee2000}, e os acidentes do Therac-25, que expuseram pacientes a doses excessivas de radiação \cite{levenson1993}.
+
+Dessa forma, é possível afirmar que as vulnerabilidades de software não devem ser negligenciadas. No entanto, métodos tradicionais de teste podem demandar tempo e recursos escassos \cite{abdullahi2020} \cite{garousi2020}. Como consequência, vulnerabilidades críticas seguem recorrentes em diferentes contextos \cite{sanchez2020}, o que reforça a necessidade de técnicas automáticas e robustas. Nesse cenário, são utilizadas ferramentas de análise estática (\textit{Static Application Testing} — SAT) e dinâmica (\textit{Dynamic Application Security Testing} — DAST), além de abordagens com \textit{machine learning} (ML) e \textit{deep learning} (DL).
+
+Apesar de estudos anteriores avaliarem ferramentas SAT e DAST, além de explorarem ML para detecção de vulnerabilidades \cite{qadir2025} \cite{russell2018} \cite{wu2017} \cite{steenhoek2023}, ainda há uma lacuna quanto à comparação direta entre ferramentas baseadas em ML e algoritmos determinísticos. Essa ausência de evidência formal dificulta a escolha técnica embasada.
+
+\section{Objetivo}
+Investigar a eficácia de abordagens de análise de código baseadas em ML e em algoritmos determinísticos na detecção de vulnerabilidades em projetos C/C++.
+
+\section{Perguntas de Pesquisa}
+\label{sec:perguntas}
+
+\noindent\textbf{P1.} Qual a precisão de ferramentas de análise de código que utilizam ML em comparação com algoritmos determinísticos?
+\begin{itemize}
+  \item Taxa de vulnerabilidades encontradas \cite{jeon2021} \cite{arusoaie2017} \cite{maskur2019};
+  \item Taxa de falsos positivos e negativos \cite{jeon2021} \cite{arusoaie2017} \cite{emanuelsson2008} \cite{russell2018};
+  \item Detecções únicas por ferramenta \cite{arusoaie2017}.
+\end{itemize}
+
+\noindent\textbf{P2.} Quais tipos de vulnerabilidades são mais detectadas e negligenciadas por cada abordagem?
+\begin{itemize}
+  \item Cobertura por categoria \textit{Common Weakness Enumeration} (CWE): \textit{buffer overflow}, uso de variáveis não inicializadas, injeções, entre outros \cite{mitre2024} \cite{arusoaie2017} \cite{russell2018} \cite{steenhoek2023};
+  \item Vulnerabilidades não detectadas por categoria de ferramentas(pontos cegos) \cite{russell2018};
+  \item Vulnerabilidades mais frequentes por ferramenta  \cite{russell2018} .
+\end{itemize}
+
+\noindent\textbf{P3.} Como as ferramentas de análise se comportam em ambientes reais?
+\begin{itemize}
+  \item Quantidade de vulnerabilidades encontradas;
+  \item Tempo gasto de análise;
+  \item Utilização média dos recursos computacionais (CPU, \textit{Central Processing Unit}, e RAM, \textit{Random Access Memory});
+\end{itemize}
+
+\section{Trabalhos Relacionados}
+
+\subsection{\textit{Comparative Evaluation of Approaches \& Tools for Effective Security Testing of Web Applications}}
+
+Este estudo avalia comparativamente ferramentas e abordagens de testes de segurança de aplicações \textit{web}, utilizando simultaneamente métodos de análise estática (SAST) e análise dinâmica (DAST). Foram testadas 75 aplicações reais com nove ferramentas abertas e gratuitas, mapeando as vulnerabilidades detectadas às listas OWASP Top 10:2021 e CWE Top 25:2023. Os resultados indicam que as ferramentas DAST são mais eficazes em categorias como Broken Access Control e Security Misconfiguration, enquanto ferramentas SAST se destacam na detecção de falhas de alta severidade \cite{qadir2025}.
+
+Esse artigo serve como base metodológica e comparativa, demonstrando o valor de combinar múltiplas abordagens automatizadas para ampliar a cobertura e precisão na detecção de vulnerabilidades. Ele proporciona uma visão de como ferramentas SAST se comportam em sistemas reais.
+
+\subsection{\textit{A Comparison of Open-Source Static Analysis Tools for Vulnerability Detection in C/C++ Code}}
+
+O artigo compara diversas ferramentas SAST \textit{open source} aplicadas a código C/C++, com foco na eficácia na detecção de vulnerabilidades. Foram avaliadas ferramentas como Cppcheck, Flawfinder e RATS, considerando métricas de precisão, taxa de falsos positivos e tipos de vulnerabilidade identificados. Os resultados mostram que cada ferramenta tem especializações distintas \cite{arusoaie2017}.
+
+Esse estudo é relevante para compreender-se como analisar o desempenho de \textit{softwares} SATS. Ele fornece uma visão prática da eficiência e limitações de ferramentas estáticas.
+
+\subsection{\textit{Automated Vulnerability Detection in Source Code Using Deep Representation Learning}}
+
+Este trabalho propõe um sistema automatizado de detecção de vulnerabilidades em código C/C++ baseado em aprendizado de máquina de representações. O modelo utiliza milhões de funções extraídas de bases \textit{open source} (como GitHub e Debian) e aplica técnicas de \textit{deep representation learning} sobre código, combinando uma rede neural convolucional com um classificador Random Forest. O sistema atinge bom desempenho na detecção de falhas associadas a categorias CWE, como Buffer Overflow e NULL Pointer Dereference \cite{russell2018}.
+
+O artigo é relevante para compreender-se como as ferramentas de aprendizado de máquina são criadas e utilizadas em cenários de detecção de vulnerabilidades. Ademais, ele proporciona uma visão geral de como avaliar esse tipo de sistema.
+
+\subsection{\textit{Vulnerability Detection with Deep Learning}}
+
+O artigo propõe o uso de modelos de \textit{deep learning} para detectar vulnerabilidades em programas binários, com base em análise dinâmica de sequências de chamadas de funções. Foram coletadas 9.872 sequências de execução e os modelos alcançaram acurácia de até 83,6\%, superando os  métodos tradicionais avaliados. O estudo destaca a capacidade das redes profundas em capturar padrões relacionados a vulnerabilidades \cite{wu2017}.
+
+Esse estudo explora redes neurais aplicadas à segurança de software, reforçando a importância de técnicas híbridas (estáticas e dinâmicas) e o uso de \textit{deep learning} para aprimorar a precisão e generalização na detecção automática de falhas. Portanto, além de proporcionar uma visão de como ferramentas de ML funcionam nesse contexto, ele demostrar como comparar essa abordagem com algoritmos determinísticos.
+
+\subsection{\textit{An Empirical Study of Deep Learning Models for Vulnerability Detection}}
+
+Este estudo realiza uma análise empírica comparativa de nove modelos de aprendizado profundo para detecção de vulnerabilidades, incluindo arquiteturas GNNs, RNNs, Transformers e CNNs, aplicadas a conjuntos de dados reais (Devign e MSR). Os autores investigam variabilidade entre execuções, impacto do tamanho e da composição dos dados de treino e interpretabilidade dos modelos. Constatam que existe uma grande variação entre eles e que o desempenho depende fortemente do tipo de vulnerabilidade e das informações proporcionadas \cite{steenhoek2023}.
+
+O artigo contribui para esse trabalho ao oferecer uma visão sobre a robustez, reprodutibilidade e explicabilidade das ferramentas de ML, enfatizando a necessidade de combinar técnicas e ajustar modelos conforme o tipo de falha e contexto do código analisado. Portanto, ele é de externa importância para compreender o estado da arte do uso de aprendizado de máquina na detecção de vulnerabilidades.
+
+\section{Metodologia}
+
+A pesquisa utiliza abordagem comparativa entre ferramentas de análise de código baseadas em algoritmos determinísticos e ferramentas baseadas em aprendizado de máquina (\textit{machine learning} — ML). O método consiste em cinco etapas principais, como ilustrado na Figura~\ref{fig:metodologia}: seleção das ferramentas, definição do conjunto de dados, mineração e análise de repositórios, normalização dos resultados e comparação quantitativa e qualitativa.
+
+\subsection{Questões de Pesquisa e Hipóteses}
+Nessa seção, será explorado as hipóteses sobre as perguntas descritas na Seção~\ref{sec:perguntas}. Ela será organizadas em subseções, cada uma contendo uma questão.
+
+\subsubsection{Qual a precisão de ferramentas de análise de código que utilizam ML em comparação com algoritmos determinísticos?}
+
+\begin{itemize}
+  \item \textbf{Hipótese nula:} Não há diferença estatisticamente significativa entre o número médio de vulnerabilidades detectadas por ferramentas determinísticas e por ferramentas de aprendizado de máquina.
+  \item \textbf{Hipótese alternativa:} Ferramentas de aprendizado de máquina detectam um número significativamente maior de vulnerabilidades que as determinísticas, porém apresentam uma taxa superior de falsos positivos.
+\end{itemize}
+
+\subsubsection{Quais tipos de vulnerabilidades são mais detectadas e negligenciadas por cada abordagem?}
+
+\begin{itemize}
+  \item \textbf{Hipótese nula:} Não há diferença significativa entre as abordagens determinísticas e as de aprendizado de máquina em relação à complexidade das vulnerabilidades detectadas.
+  \item \textbf{Hipótese alternativa:} As abordagens determinísticas são mais precisas na detecção de vulnerabilidades simples e estruturais, enquanto as de aprendizado de máquina obtêm melhores resultados na detecção de vulnerabilidades contextuais e dependentes de fluxo, embora com maior incidência de falsos positivos.
+\end{itemize}
+
+\subsubsection{Como as ferramentas de análise se comportam em ambientes reais?}
+
+\begin{itemize}
+  \item \textbf{Hipótese nula:} Ferramentas baseadas em aprendizado de máquina tendem a encontrar menos vulnerabilidades e utilizam muitos mais recursos computacionais.
+  \item \textbf{Hipótese alternativa:} Ferramentas determinísticas tendem a encontrar menos vulnerabilidades e utilizam muitos mais recursos computacionais.
+\end{itemize}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\textwidth]{imgs/metodologia.png}
+\caption{Metodologia}
+\label{fig:metodologia}
+\end{figure}
+
+\subsection{Seleção das ferramentas}
+Selecionaram-se duas ferramentas determinísticas e duas ferramentas baseadas em ML. As determinísticas são Codeql \cite{codeql} e Snyk \cite{snyk}, amplamente utilizadas na indústria de software para análise estática (\textit{Static Application Testing} — SAT) e análise de dependências. As ferramentas de ML escolhidas foram o AutoVAS \cite{jeon2021} e o VulCNN \cite{WU2022}, ambas fundamentadas em técnicas de \textit{deep learning} (\textit{DL}) para detecção automática de vulnerabilidades. As quatro ferramentas foram selecionadas por possuírem documentação pública, código-fonte acessível e relevância em estudos recentes \cite{arusoaie2017} \cite{russell2018} \cite{steenhoek2023}.
+
+\subsection{Base de dados}
+A avaliação é conduzida utilizando a \textit{Software Assurance Reference Dataset} (SARD), do \textit{National Institute of Standards and Technology} \cite{nist}, que contém projetos \textit{open-source} escritos em C e C++, com vulnerabilidades catalogadas conforme o padrão \textit{Common Weakness Enumeration} (CWE). Essa base foi escolhida por permitir a comparação entre diferentes abordagens de análise de código em condições controladas e reproduzíveis.
+
+Para enriquecer os resultados desse estudo, foram utilizados, também, repositórios C/C++ do GitHub \cite{github}. Eles foram utilizados para comparar o desempenho de cada ferramenta em ambientes reais.
+
+\subsection{Procedimentos de mineração e análise}
+Foram minerados mil casos de teste do SARD \cite{nist}, todos em linguagens C/C++. Cada repositório foi submetido à análise pelas quatro ferramentas selecionadas. Em seguida, coletaram-se as métricas de desempenho de cada abordagem:  
+(i) taxa de vulnerabilidades detectadas,  
+(ii) taxas de falsos positivos e falsos negativos,  
+(iii) tempo médio de execução,  
+(iv) utilização média de \textit{Central Processing Unit} (CPU, em português Unidade Central de Processamento — UCP) e  
+(v) consumo médio de memória.
+
+Após isso, foram extraídos os 140 repositórios mais populares de C/C++ no GitHub \cite{github} que foram submetidos a mesma análise realizada anteriormente. 
+
+\subsection{Normalização e agrupamento dos dados}
+A normalização dos dados foi feita através de \textit{scripts} Python que fazem a comparação com as vulnerabilidades esperadas, realizam a sintetizam para análise e, por fim, criam um relatório final em Markdown. Após isso, os dados são transferidos para uma planilha e, através do Power BI \cite{microsoft_power_bi}, eles são agrupados e a visualização dos resultados é montada.
+
+\subsection{\textit{Setup} Experimental}
+O experimento foi conduzido de forma controlada, aplicando as quatro ferramentas selecionadas sobre dois conjuntos de dados: a base SARD/NIST \cite{nist}, com mil casos de teste rotulados, e 140 repositórios reais do GitHub \cite{github} em C/C++.
+
+\subsubsection{Variáveis independentes}
+
+\begin{itemize}
+  \item Tipo de abordagem (determinística vs. aprendizado de máquina)
+  \item Tipo de vulnerabilidade (categoria CWE)
+  \item Tamanho e origem do código (SARD vs. GitHub)
+\end{itemize}
+
+\subsubsection{Variáveis dependentes}
+
+\begin{itemize}
+  \item Número de vulnerabilidades detectadas
+  \item Taxa de falsos positivos
+  \item Taxa de falsos negativos
+  \item Precisão e cobertura obtidos por cada abordagem/ferramenta
+  \item Consumo médio de CPU e RAM
+\end{itemize}
+
+\subsection{Síntese metodológica}
+A Figura~\ref{fig:referencias} apresenta uma visão geral da estrutura metodológica e das fontes bibliográficas que sustentam cada grupo de ferramentas e conceitos. Nela, observa-se que as referências bibliográficas foram organizadas em três blocos conceituais: vulnerabilidades (em vermelho), ferramentas determinísticas (em verde) e ferramentas baseadas em aprendizado de máquina (em azul). Essa estrutura orientou a coleta e análise dos dados, garantindo que cada grupo de ferramentas fosse contextualizado com sua respectiva base teórica.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/referencias.png}
+\caption{Síntese metodológica do estudo: relação entre vulnerabilidades, ferramentas determinísticas e ferramentas baseadas em aprendizado de máquina.}
+\label{fig:referencias}
+\end{figure}
+
+\section{Resultados}
+\label{sec:resultados}
+
+Nessa seção, são relatados os resultados encontrados durante a execução dos experimentos. Ela foi organizada de modo a responder às perguntas estabelecidas no modelo GQM, descritas na Seção~\ref{sec:perguntas}. Cada subseção apresenta as métricas e evidências que fundamentam a análise comparativa entre as abordagens determinísticas (CodeQL e Snyk) e baseadas em aprendizado de máquina (AutoVAS e VulCNN).
+
+\subsection{Qual a precisão de ferramentas de análise de código que utilizam ML em comparação com algoritmos determinísticos?}
+\label{sec:rq1}
+
+Essa pergunta foca no desempenho geral de cada uma das abordagens estudadas, a fim de compreender a confiabilidade e cobertura de cada uma delas. Para determinar isso, foram utilizados os dados das análises realizadas nos códigos do SARD \cite{nist}.
+
+Na Figuras~\ref{fig:rq1m1} é possível visualizar a taxa detecção de cada tipo de ferramenta, sendo notável a superioridade dos sistemas de ML nisso quesito. No entanto, como mostrado nas Figuras~\ref{fig:sardExe}, \ref{fig:sardCPU} e \ref{fig:sardRAM}, eles gastam muito mais recursos computacionais.
+
+Apesar de diversos modelos de ML alucinarem algumas vezes \cite{ji2023}, nesse estudo foi evidenciado que as ferramentas dessa categoria encontraram menos falsos positivos que as abordagens determinísticas, como é possível visualizar na Figura~\ref{fig:rq1m2}. Ademais, os \textit{softwares} baseados em aprendizado de máquina tiveram uma taxa de falsos negativos menor que suas contra parte determinísticas, como mostrado na Figura~\ref{fig:rq1m21}.
+
+Por fim, nas Figuras~\ref{fig:rq1m3} e \ref{fig:rq1m31} são listadas as detecções únicas de cada ferramenta e abordagem, então sendo possível evidenciar, novamente, que os sistemas de ML se sobressaíram nessa métrica. Assim, é possível concluir que eles tendem a balancear bem confiabilidade e cobertura, como demonstrado na Figura~\ref{fig:rq1}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ1-M1-1.png}
+\caption{Taxa de vulnerabilidades encontradas por ferramenta}
+\label{fig:rq1m1}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ1-M2.png}
+\caption{Taxa de falsos positivos/negativos por ferramenta}
+\label{fig:rq1m2}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ1-M2-1.png}
+\caption{Taxa de falsos positivos/negativos por ferramenta}
+\label{fig:rq1m21}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ1-M3.png}
+\caption{Cobertura comparada com a confiabilidade}
+\label{fig:rq1m3}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ1-M3-1.png}
+\caption{Cobertura comparada com a confiabilidade}
+\label{fig:rq1m31}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ1.png}
+\caption{Cobertura comparada com a confiabilidade}
+\label{fig:rq1}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/SARD-Execution.png}
+\caption{SARD - Tempo de execução de cada ferramenta}
+\label{fig:sardExe}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/SARD-Execution.png}
+\caption{SARD - Uso médio de CPU de cada ferramenta}
+\label{fig:sardCPU}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/SARD-RAM.png}
+\caption{SARD - Uso médio de RAM de cada ferramenta}
+\label{fig:sardRAM}
+\end{figure}
+
+\subsection{Quais tipos de vulnerabilidades são mais detectadas e negligenciadas por cada abordagem?}
+\label{sec:rq2}
+
+As Figuras~\ref{fig:rq2m1} e \ref{fig:rq2m11} fazem uma síntese para essa questão, sendo possível identificar que os pontos fortes e fracos de cada ferramenta e abordagem. Os \textit{softwares} determinísticas são mais precisas nas detecções de vulnerabilidades como CWE416, CWE415 e CWE78, como evidenciado pela Figura~\ref{fig:rq2m31}. Enquanto isso, as abordagens baseadas em aprendizado de máquina tendem a encontrar mais problemas como CWE122 e CWE369.
+
+Apesar dos pontos fortes, todas as ferramentas também possuem fraquezas, como exemplificado pela Figura~\ref{fig:rq2m2} e \ref{fig:rq2m11}. As abordagens determinísticas tem um baixo desempenho em falhas como CWE369, enquanto os \textit{sistemas} de ML tem dificuldade em encontrar vulnerabilidades como CWE476 e CWE775.
+
+Portanto, apesar das ferramenta baseadas em aprendizado de máquina possuírem mais capacidade de detectar certos problemas, elas pecam muito é várias outras categorias. Enquanto as abordagens determinísticas tendem a ter um desempenho similar na maioria das vulnerabilidades CWE.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.7\textwidth]{imgs/RQ2-M1.png}
+\caption{Heatmap de Categoria CWE por ferramenta}
+\label{fig:rq2m1}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.7\textwidth]{imgs/RQ2-M1-1.png}
+\caption{Heatmap de Categoria CWE por abordagem}
+\label{fig:rq2m11}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ2-M2.png}
+\caption{Vulnerabilidades não encontradas por cada ferramenta}
+\label{fig:rq2m2}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ2-M3-1.png}
+\caption{Detecções únicas de cada abordagem por categoria CWE}
+\label{fig:rq2m31}
+\end{figure}
+
+\subsection{Como as ferramentas de análise se comportam em ambientes reais?}
+\label{sec:rq3}
+
+Para responder essa questão, foram utilizados os 140 repositórios C/C++ do Github \cite{github} como base para a geração dos resultados. Todas as ferramentas selecionadas analisaram cada um deles, a fim de compreender seu desempenho em casos reais, mas sem determinar sua eficácia.
+
+Na Figura~\ref{fig:rq3m1} é possível observar que as ferramentas baseadas em aprendizado de máquina encontraram mais vulnerabilidades e levando menos tempo para executar, como visto nas Figuras~\ref{fig:rq3m2} e \ref{fig:rq3}. No entanto, elas utilizaram mais poder computacional, assim como mostra a Figura~\ref{fig:rq3m3CPU}, mesmo que o pico de uso da CPU tenha sido parecido para as duas abordagens analisadas. Por fim, os sistemas determinísticos necessitaram mais RAM para executar, como mostrando na Figura~\ref{fig:rq3m3RAM}, demonstrando que eles possuem algoritmos mais pesados, embora sejam mais consolidados no mercado.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ3-M1.png}
+\caption{Quantidade de vulnerabilidades encontradas por abordagem}
+\label{fig:rq3m1}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ3-M2.png}
+\caption{Tempo de execução de cada análise}
+\label{fig:rq3m2}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ3.png}
+\caption{Vulnerabilidades encontradas x tempo de execução x uso médio de cpu}
+\label{fig:rq3}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ3-M3-CPU.png}
+\caption{Uso médio de CPU por abordagem}
+\label{fig:rq3m3CPU}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{imgs/RQ3-M3-RAM.png}
+\caption{Uso médio de RAM por abordagem}
+\label{fig:rq3m3RAM}
+\end{figure}
+
+\section{Limitações do Estudo}
+\label{sec:limitacoes}
+
+As principais limitações do estudo está relacionada à quantidade e ao escopo das ferramentas analisadas. Foram avaliadas apenas quatro ferramentas, sendo elas duas determinísticas e duas baseadas em aprendizado de máquina, o que não representa a totalidade das soluções existentes no mercado. No entanto, existem ferramentas emergentes, tanto comerciais quanto de código aberto, que podem apresentar resultados distintos em termos de precisão, desempenho e cobertura de vulnerabilidades.
+
+Outra limitação refere-se à linguagem de programação adotada na base experimental. A pesquisa foi centralizada em repositórios desenvolvidos em C e C++, o que restringe a generalização dos resultados para outras linguagens. Sendo assim, abordagens aplicadas a contextos como Java, Python ou JavaScript podem apresentar comportamentos diferentes devido a características estruturais e de tipagem próprias de cada linguagem.
+
+Além disso, apesar a análise foi conduzida de forma controlada, utilizando a base \textit{Software Assurance Reference Dataset} (SARD), o que garante reprodutibilidade, mas não reflete completamente o ambiente de desenvolvimento de sistemas reais. Apesar de serem utilizados repositórios reais para a análise de desempenho, a precisão da análise de cada ferramenta neles não foi medida. Portanto, os resultados obtidos devem ser interpretados considerando essas limitações metodológicas e contextuais.
+
+\section{Trabalhos Futuros}
+\label{sec:futuros}
+
+Como continuação desta pesquisa, propõe-se ampliar o escopo de ferramentas e linguagens de programação analisadas. A inclusão de novas abordagens determinísticas e modelos de aprendizado profundo (\textit{deep learning}) pode fornecer uma visão mais abrangente sobre a eficácia e os limites de cada técnica de detecção de vulnerabilidades.
+
+Outra possibilidade consiste em aplicar o método proposto em projetos de \textit{software} reais, avaliando a capacidade das ferramentas de identificar falhas em cenários dinâmicos, com bases de código em constante evolução. Essa etapa permitiria verificar, na prática, se o uso combinado de ferramentas determinísticas e de aprendizado de máquina resulta em redução efetiva de vulnerabilidades durante o ciclo de desenvolvimento.
+
+Também, é sugerido explorar a integração entre análise estática e dinâmica, a fim de desenvolver uma estrutura híbrida de detecção automatizada que una precisão, cobertura e eficiência. Por fim, recomenda-se a realização de estudos comparativos longitudinais, a fim de observar a evolução das ferramentas e o impacto das atualizações de modelos de aprendizado sobre sua eficácia.
+
+\section{Conclusão}
+\label{sec:conclusao}
+
+% Apesar dos \textit{softwares} determinísticos serem mais consolidados no mercado, sua contra parte, mesmo estando no escopo acadêmico, se mostra muito promissora. Com mais refinamento e simplificação dos sistemas baseados em aprendizados de máquina, diversos setores da sociedade podem se beneficiar deles.
+
+\section{Referências}
+
+\bibliographystyle{sbc}
+\bibliography{sbc-template}
+
+\end{document}
